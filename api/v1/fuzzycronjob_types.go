@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,6 +31,10 @@ type FuzzyCronJobSpec struct {
 
 	// Foo is an example field of FuzzyCronJob. Edit fuzzycronjob_types.go to remove/update
 	Foo string `json:"foo,omitempty"`
+
+	Schedule string `json:"schedule"`
+
+	CronJob batchv1.CronJobSpec `json:"cronJob"`
 }
 
 // FuzzyCronJobStatus defines the observed state of FuzzyCronJob
@@ -38,6 +43,7 @@ type FuzzyCronJobStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
+//+kubebuilder:resource:shortName=fcj
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
