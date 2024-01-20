@@ -1,0 +1,12 @@
+apiVersion: batch.oofoghlu/v1
+kind: FuzzyCronJob
+metadata:
+  labels:
+    app.kubernetes.io/name: fuzzycronjob
+    app.kubernetes.io/instance: fuzzycronjob-sample
+    app.kubernetes.io/part-of: fuzzycron
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: fuzzycron
+  name: fuzzycronjob-sample
+spec:
+  # TODO(user): Add fields here
