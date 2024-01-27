@@ -95,6 +95,14 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	if len(childCronJobs.Items) == 0 {
+		// Evaluate hashes in crontab expression
+		schedule, err := EvalCrontab(fuzzyCronJob.Spec.Schedule, req.Namespace+fuzzyCronJob.Name)
+		if err != nil {
+			log.Error(err, "unable to construct CronJob schedule from FuzzyCronJob schedule")
+			// don't bother requeuing until we get a change to the spec
+			return ctrl.Result{}, nil
+		}
+		fuzzyCronJob.Spec.CronJob.Schedule = schedule
 		cronjob, err := constructCronJobForFuzzyCronJob(&fuzzyCronJob)
 		if err != nil {
 			log.Error(err, "unable to construct cronjob from template")
