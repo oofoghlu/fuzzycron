@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	batchv1 "oofoghlu/fuzzycron/api/v1"
+	"oofoghlu/fuzzycron/internal/utils"
 )
 
 // FuzzyCronJobReconciler reconciles a FuzzyCronJob object
@@ -69,7 +70,6 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
-	// TODO handle creates
 	constructCronJobForFuzzyCronJob := func(fuzzyCronJob *batchv1.FuzzyCronJob) (*kbatch.CronJob, error) {
 		// We want job names for a given nominal start time to have a deterministic name to avoid the same job being created twice
 		cronjob := &kbatch.CronJob{
@@ -95,7 +95,7 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	// Evaluate hashes in crontab expression
-	schedule, err := EvalCrontab(fuzzyCronJob.Spec.Schedule, req.Namespace+fuzzyCronJob.Name)
+	schedule, err := utils.EvalCrontab(fuzzyCronJob.Spec.Schedule, req.Namespace+fuzzyCronJob.Name)
 	if err != nil {
 		log.Error(err, "unable to construct CronJob schedule from FuzzyCronJob schedule")
 		// don't bother requeuing until we get a change to the spec
