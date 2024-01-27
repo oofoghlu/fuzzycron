@@ -46,6 +46,8 @@ type FuzzyCronJobStatus struct {
 //+kubebuilder:resource:shortName=fcj
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Fuzzy Schedule",type="string",JSONPath=`.spec.schedule`
+//+kubebuilder:printcolumn:name="Schedule",type="string",JSONPath=`.spec.cronJob.schedule`
 
 // FuzzyCronJob is the Schema for the fuzzycronjobs API
 type FuzzyCronJob struct {

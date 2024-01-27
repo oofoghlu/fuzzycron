@@ -16,7 +16,14 @@ spec:
     singular: fuzzycronjob
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.schedule
+      name: Fuzzy Schedule
+      type: string
+    - jsonPath: .spec.cronJob.schedule
+      name: Schedule
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         properties:
