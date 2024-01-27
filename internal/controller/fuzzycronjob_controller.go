@@ -56,13 +56,13 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	var fuzzyCronJob batchv1.FuzzyCronJob
 	if err := r.Get(ctx, req.NamespacedName, &fuzzyCronJob); err != nil {
 		log.Error(err, "unable to fetch FuzzyCronJob")
+		// TODO deletes work and propogate but there must be a better way than throwing error here every time??
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// TODO get list of cronjobs associated. via cronJobOwnerKey.
 	var childCronJobs kbatch.CronJobList
 	if err := r.List(ctx, &childCronJobs, client.InNamespace(req.Namespace), client.MatchingFields{cronJobOwnerKey: req.Name}); err != nil {
 		log.Error(err, "unable to list child CronJobs")
@@ -94,35 +94,36 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return cronjob, nil
 	}
 
-	if len(childCronJobs.Items) == 0 {
-		// Evaluate hashes in crontab expression
-		schedule, err := EvalCrontab(fuzzyCronJob.Spec.Schedule, req.Namespace+fuzzyCronJob.Name)
-		if err != nil {
-			log.Error(err, "unable to construct CronJob schedule from FuzzyCronJob schedule")
-			// don't bother requeuing until we get a change to the spec
-			return ctrl.Result{}, nil
-		}
-		fuzzyCronJob.Spec.CronJob.Schedule = schedule
-		cronjob, err := constructCronJobForFuzzyCronJob(&fuzzyCronJob)
-		if err != nil {
-			log.Error(err, "unable to construct cronjob from template")
-			// don't bother requeuing until we get a change to the spec
-			return ctrl.Result{}, nil
-		}
+	// Evaluate hashes in crontab expression
+	schedule, err := EvalCrontab(fuzzyCronJob.Spec.Schedule, req.Namespace+fuzzyCronJob.Name)
+	if err != nil {
+		log.Error(err, "unable to construct CronJob schedule from FuzzyCronJob schedule")
+		// don't bother requeuing until we get a change to the spec
+		return ctrl.Result{}, nil
+	}
+	fuzzyCronJob.Spec.CronJob.Schedule = schedule
+	cronjob, err := constructCronJobForFuzzyCronJob(&fuzzyCronJob)
+	if err != nil {
+		log.Error(err, "unable to construct cronjob from template")
+		// don't bother requeuing until we get a change to the spec
+		return ctrl.Result{}, nil
+	}
 
+	if len(childCronJobs.Items) == 0 {
 		if err := r.Create(ctx, cronjob); err != nil {
 			log.Error(err, "unable to create CronJob for FuzzyCronJob", "cronjob", cronjob)
 			return ctrl.Result{}, err
 		}
 
 		log.V(1).Info("created CronJob for FuzzyCronJob run", "cronjob", cronjob)
+	} else {
+		if err := r.Update(ctx, cronjob); err != nil {
+			log.Error(err, "unable to update CronJob for FuzzyCronJob", "cronjob", cronjob)
+			return ctrl.Result{}, err
+		}
+
+		log.V(1).Info("updated CronJob for FuzzyCronJob run", "cronjob", cronjob)
 	}
-
-	// TODO handle updates
-
-	// TODO handle deletes
-
-	// TODO handle cronjob out of sync
 
 	return ctrl.Result{}, nil
 }
