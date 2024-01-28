@@ -91,8 +91,9 @@ func main() {
 	}
 
 	if err = (&controller.FuzzyCronJobReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("fuzzycronjob-controller"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "FuzzyCronJob")
 		os.Exit(1)

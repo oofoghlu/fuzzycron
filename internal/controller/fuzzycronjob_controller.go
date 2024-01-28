@@ -18,10 +18,12 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
 	kbatch "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -33,13 +35,15 @@ import (
 // FuzzyCronJobReconciler reconciles a FuzzyCronJob object
 type FuzzyCronJobReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=batch.oofoghlu,resources=fuzzycronjobs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch.oofoghlu,resources=fuzzycronjobs/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=batch.oofoghlu,resources=fuzzycronjobs/finalizers,verbs=update
 //+kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -112,16 +116,32 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	if len(childCronJobs.Items) == 0 {
 		if err := r.Create(ctx, cronjob); err != nil {
 			log.Error(err, "unable to create CronJob for FuzzyCronJob", "cronjob", cronjob)
+			r.Recorder.Event(&fuzzyCronJob, "Warning", "FailedCreating",
+				fmt.Sprintf("CronJob Resource %s failed to be created from the namespace %s",
+					cronjob.Name,
+					cronjob.Namespace))
 			return ctrl.Result{}, err
 		}
 
+		r.Recorder.Event(&fuzzyCronJob, "Normal", "Creating",
+			fmt.Sprintf("CronJob Resource %s is being created from the namespace %s",
+				cronjob.Name,
+				cronjob.Namespace))
 		log.V(1).Info("created CronJob for FuzzyCronJob run", "cronjob", cronjob)
 	} else {
 		if err := r.Update(ctx, cronjob); err != nil {
 			log.Error(err, "unable to update CronJob for FuzzyCronJob", "cronjob", cronjob)
+			r.Recorder.Event(&fuzzyCronJob, "Warning", "FailedUpdating",
+				fmt.Sprintf("CronJob Resource %s failed to be updated from the namespace %s",
+					cronjob.Name,
+					cronjob.Namespace))
 			return ctrl.Result{}, err
 		}
 
+		r.Recorder.Event(&fuzzyCronJob, "Normal", "Updating",
+			fmt.Sprintf("CronJob Resource %s is being updated from the namespace %s",
+				cronjob.Name,
+				cronjob.Namespace))
 		log.V(1).Info("updated CronJob for FuzzyCronJob run", "cronjob", cronjob)
 	}
 
