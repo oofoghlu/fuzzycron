@@ -41,13 +41,14 @@ type FuzzyCronJobSpec struct {
 type FuzzyCronJobStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Schedule string `json:"schedule,omitempty"`
 }
 
 //+kubebuilder:resource:shortName=fcj
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="Fuzzy Schedule",type="string",JSONPath=`.spec.schedule`
-//+kubebuilder:printcolumn:name="Schedule",type="string",JSONPath=`.spec.cronJob.schedule`
+//+kubebuilder:printcolumn:name="Schedule",type="string",JSONPath=`.status.schedule`
 
 // FuzzyCronJob is the Schema for the fuzzycronjobs API
 type FuzzyCronJob struct {

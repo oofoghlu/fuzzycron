@@ -145,6 +145,12 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		log.V(1).Info("updated CronJob for FuzzyCronJob run", "cronjob", cronjob)
 	}
 
+	fuzzyCronJob.Status.Schedule = schedule
+	if err := r.Status().Update(ctx, &fuzzyCronJob); err != nil {
+		log.Error(err, "unable to update FuzzyCronJob status")
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
