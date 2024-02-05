@@ -151,6 +151,8 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
+	log.V(1).Info("Successfully updated Status", "fuzzycronjob", fuzzyCronJob)
+
 	return ctrl.Result{}, nil
 }
 
