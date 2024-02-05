@@ -1,17 +1,12 @@
 package utils
 
 import (
-	"fmt"
 	"hash/fnv"
 	"strconv"
 	"strings"
 
 	"github.com/robfig/cron"
 )
-
-func IsValidCrontab(Crontab string) bool {
-	return true
-}
 
 func hash(s string) uint32 {
 	h := fnv.New32a()
@@ -23,12 +18,20 @@ func moduloHash(hashNumber uint32, modulo int) string {
 	return strconv.FormatUint(uint64(hashNumber%uint32(modulo)), 10)
 }
 
-func EvalCrontab(Crontab string, Name string) (string, error) {
-	split := strings.Split(Crontab, " ")
-	if len(split) != 5 {
-		return Name, fmt.Errorf("%s crontab must contain exactly 5 elements", Name)
+func parseSchedule(schedule string) (string, error) {
+	_, err := cron.ParseStandard(schedule)
+	if err != nil {
+		return "", err
 	}
-	hashNumber := hash(Name)
+	return schedule, nil
+}
+
+func EvalCrontab(crontab string, name string) (string, error) {
+	split := strings.Split(crontab, " ")
+	if len(split) != 5 {
+		return parseSchedule(crontab)
+	}
+	hashNumber := hash(name)
 	var evalSplit [5]string
 	for index, num := range split {
 		switch index {
@@ -52,9 +55,5 @@ func EvalCrontab(Crontab string, Name string) (string, error) {
 		}
 	}
 	evalSchedule := strings.Join(evalSplit[:], " ")
-	_, err := cron.ParseStandard(evalSchedule)
-	if err != nil {
-		return "", err
-	}
-	return evalSchedule, nil
+	return parseSchedule(evalSchedule)
 }
