@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	batchv1 "oofoghlu/fuzzycron/api/v1"
+	"oofoghlu/fuzzycron/internal/metrics"
 	"oofoghlu/fuzzycron/internal/utils"
 )
 
@@ -56,7 +57,6 @@ type FuzzyCronJobReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
 func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
-
 	// TODO(user): your logic here
 	var fuzzyCronJob batchv1.FuzzyCronJob
 	if err := r.Get(ctx, req.NamespacedName, &fuzzyCronJob); err != nil {
@@ -115,6 +115,7 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	if len(childCronJobs.Items) == 0 {
 		if err := r.Create(ctx, cronjob); err != nil {
+			metrics.CronCreationError.WithLabelValues(fuzzyCronJob.Name, fuzzyCronJob.Namespace).Inc()
 			log.Error(err, "unable to create CronJob for FuzzyCronJob", "cronjob", cronjob)
 			r.Recorder.Event(&fuzzyCronJob, "Warning", "FailedCreating",
 				fmt.Sprintf("CronJob Resource %s failed to be created from the namespace %s",
@@ -123,6 +124,7 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			return ctrl.Result{}, err
 		}
 
+		metrics.CronCreation.WithLabelValues(fuzzyCronJob.Name, fuzzyCronJob.Namespace).Inc()
 		r.Recorder.Event(&fuzzyCronJob, "Normal", "Creating",
 			fmt.Sprintf("CronJob Resource %s is being created from the namespace %s",
 				cronjob.Name,
@@ -130,6 +132,7 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		log.V(1).Info("created CronJob for FuzzyCronJob run", "cronjob", cronjob)
 	} else {
 		if err := r.Update(ctx, cronjob); err != nil {
+			metrics.CronUpdateError.WithLabelValues(fuzzyCronJob.Name, fuzzyCronJob.Namespace).Inc()
 			log.Error(err, "unable to update CronJob for FuzzyCronJob", "cronjob", cronjob)
 			r.Recorder.Event(&fuzzyCronJob, "Warning", "FailedUpdating",
 				fmt.Sprintf("CronJob Resource %s failed to be updated from the namespace %s",
@@ -138,6 +141,7 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			return ctrl.Result{}, err
 		}
 
+		metrics.CronUpdate.WithLabelValues(fuzzyCronJob.Name, fuzzyCronJob.Namespace).Inc()
 		r.Recorder.Event(&fuzzyCronJob, "Normal", "Updating",
 			fmt.Sprintf("CronJob Resource %s is being updated from the namespace %s",
 				cronjob.Name,
@@ -147,10 +151,12 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	fuzzyCronJob.Status.Schedule = schedule
 	if err := r.Status().Update(ctx, &fuzzyCronJob); err != nil {
+		metrics.FuzzyStatusUpdateError.WithLabelValues(fuzzyCronJob.Name, fuzzyCronJob.Namespace).Inc()
 		log.Error(err, "unable to update FuzzyCronJob status")
 		return ctrl.Result{}, err
 	}
 
+	metrics.FuzzyStatusUpdate.WithLabelValues(fuzzyCronJob.Name, fuzzyCronJob.Namespace).Inc()
 	log.V(1).Info("Successfully updated Status", "fuzzycronjob", fuzzyCronJob)
 
 	return ctrl.Result{}, nil

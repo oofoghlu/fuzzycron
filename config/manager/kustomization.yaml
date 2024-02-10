@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: fuzzycronjobcontroller
-  newTag: v4
+  newTag: v8

@@ -10,6 +10,7 @@ metadata:
     app.kubernetes.io/created-by: fuzzycron
     app.kubernetes.io/part-of: fuzzycron
     app.kubernetes.io/managed-by: kustomize
+    release: prometheus
   name: controller-manager-metrics-monitor
   namespace: system
 spec:
