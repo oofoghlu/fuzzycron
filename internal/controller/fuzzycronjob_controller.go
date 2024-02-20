@@ -149,15 +149,22 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		log.V(1).Info("updated CronJob for FuzzyCronJob run", "cronjob", cronjob)
 	}
 
-	fuzzyCronJob.Status.Schedule = schedule
-	if err := r.Status().Update(ctx, &fuzzyCronJob); err != nil {
-		metrics.FuzzyStatusUpdateError.WithLabelValues(fuzzyCronJob.Name, fuzzyCronJob.Namespace).Inc()
-		log.Error(err, "unable to update FuzzyCronJob status")
-		return ctrl.Result{}, err
-	}
+	if fuzzyCronJob.Status.Schedule != schedule {
+		patch := client.MergeFrom(fuzzyCronJob.DeepCopy())
+		fuzzyCronJob.Status.Schedule = schedule
 
-	metrics.FuzzyStatusUpdate.WithLabelValues(fuzzyCronJob.Name, fuzzyCronJob.Namespace).Inc()
-	log.V(1).Info("Successfully updated Status", "fuzzycronjob", fuzzyCronJob)
+		// patch is safer than update here as the resource version isn't guaranteed to match and we don't want to have
+		// to fetch the latest version simply to update the status.
+		if err := r.Status().Patch(ctx, &fuzzyCronJob, patch); err != nil {
+
+			metrics.FuzzyStatusUpdateError.WithLabelValues(fuzzyCronJob.Name, fuzzyCronJob.Namespace).Inc()
+			log.Error(err, "unable to update FuzzyCronJob status")
+			return ctrl.Result{}, err
+		}
+
+		metrics.FuzzyStatusUpdate.WithLabelValues(fuzzyCronJob.Name, fuzzyCronJob.Namespace).Inc()
+		log.V(1).Info("Successfully updated Status", "fuzzycronjob", fuzzyCronJob)
+	}
 
 	return ctrl.Result{}, nil
 }
