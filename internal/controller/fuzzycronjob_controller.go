@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	kbatch "k8s.io/api/batch/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -130,23 +131,29 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				cronjob.Name,
 				cronjob.Namespace))
 		log.V(1).Info("created CronJob for FuzzyCronJob run", "cronjob", cronjob)
+
 	} else {
-		if err := r.Update(ctx, cronjob); err != nil {
-			metrics.CronUpdateError.WithLabelValues(fuzzyCronJob.Name, fuzzyCronJob.Namespace).Inc()
-			log.Error(err, "unable to update CronJob for FuzzyCronJob", "cronjob", cronjob)
-			r.Recorder.Event(&fuzzyCronJob, "Warning", "FailedUpdating",
-				fmt.Sprintf("CronJob Resource %s failed to be updated from the namespace %s",
+		// TODO add labels/annotation to equality check to allow for updates to them.
+		if !equality.Semantic.DeepDerivative(cronjob.Spec, childCronJobs.Items[0].Spec) {
+			if err := r.Update(ctx, cronjob); err != nil {
+				metrics.CronUpdateError.WithLabelValues(fuzzyCronJob.Name, fuzzyCronJob.Namespace).Inc()
+				log.Error(err, "unable to update CronJob for FuzzyCronJob", "cronjob", cronjob)
+				r.Recorder.Event(&fuzzyCronJob, "Warning", "FailedUpdating",
+					fmt.Sprintf("CronJob Resource %s failed to be updated from the namespace %s",
+						cronjob.Name,
+						cronjob.Namespace))
+				return ctrl.Result{}, err
+			}
+
+			metrics.CronUpdate.WithLabelValues(fuzzyCronJob.Name, fuzzyCronJob.Namespace).Inc()
+			r.Recorder.Event(&fuzzyCronJob, "Normal", "Updating",
+				fmt.Sprintf("CronJob Resource %s is being updated from the namespace %s",
 					cronjob.Name,
 					cronjob.Namespace))
-			return ctrl.Result{}, err
+			log.V(1).Info("updated CronJob for FuzzyCronJob run", "cronjob", cronjob)
+		} else {
+			log.V(1).Info("no differences in cronjob so skipping update", "cronjob", cronjob)
 		}
-
-		metrics.CronUpdate.WithLabelValues(fuzzyCronJob.Name, fuzzyCronJob.Namespace).Inc()
-		r.Recorder.Event(&fuzzyCronJob, "Normal", "Updating",
-			fmt.Sprintf("CronJob Resource %s is being updated from the namespace %s",
-				cronjob.Name,
-				cronjob.Namespace))
-		log.V(1).Info("updated CronJob for FuzzyCronJob run", "cronjob", cronjob)
 	}
 
 	if fuzzyCronJob.Status.Schedule != schedule {
