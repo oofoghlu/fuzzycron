@@ -24,6 +24,23 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// Copied from https://pkg.go.dev/k8s.io/api@v0.28.3/batch/v1#CronJobSpec with Schedule removed.
+type CronJobSpec struct {
+	TimeZone *string `json:"timeZone,omitempty" protobuf:"bytes,8,opt,name=timeZone"`
+
+	StartingDeadlineSeconds *int64 `json:"startingDeadlineSeconds,omitempty" protobuf:"varint,2,opt,name=startingDeadlineSeconds"`
+
+	ConcurrencyPolicy batchv1.ConcurrencyPolicy `json:"concurrencyPolicy,omitempty" protobuf:"bytes,3,opt,name=concurrencyPolicy,casttype=ConcurrencyPolicy"`
+
+	Suspend *bool `json:"suspend,omitempty" protobuf:"varint,4,opt,name=suspend"`
+
+	JobTemplate batchv1.JobTemplateSpec `json:"jobTemplate" protobuf:"bytes,5,opt,name=jobTemplate"`
+
+	SuccessfulJobsHistoryLimit *int32 `json:"successfulJobsHistoryLimit,omitempty" protobuf:"varint,6,opt,name=successfulJobsHistoryLimit"`
+
+	FailedJobsHistoryLimit *int32 `json:"failedJobsHistoryLimit,omitempty" protobuf:"varint,7,opt,name=failedJobsHistoryLimit"`
+}
+
 // FuzzyCronJobSpec defines the desired state of FuzzyCronJob
 type FuzzyCronJobSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -34,7 +51,7 @@ type FuzzyCronJobSpec struct {
 
 	Schedule string `json:"schedule"`
 
-	CronJob batchv1.CronJobSpec `json:"cronJob"`
+	CronJob CronJobSpec `json:"cronJob"`
 }
 
 // FuzzyCronJobStatus defines the observed state of FuzzyCronJob

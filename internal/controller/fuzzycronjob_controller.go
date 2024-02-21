@@ -20,6 +20,11 @@ import (
 	"context"
 	"fmt"
 
+	batchv1 "oofoghlu/fuzzycron/api/v1"
+	"oofoghlu/fuzzycron/internal/metrics"
+	"oofoghlu/fuzzycron/internal/utils"
+
+	"github.com/jinzhu/copier"
 	kbatch "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,10 +33,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	batchv1 "oofoghlu/fuzzycron/api/v1"
-	"oofoghlu/fuzzycron/internal/metrics"
-	"oofoghlu/fuzzycron/internal/utils"
 )
 
 // FuzzyCronJobReconciler reconciles a FuzzyCronJob object
@@ -62,7 +63,7 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	var fuzzyCronJob batchv1.FuzzyCronJob
 	if err := r.Get(ctx, req.NamespacedName, &fuzzyCronJob); err != nil {
 		log.Error(err, "unable to fetch FuzzyCronJob")
-		// TODO deletes work and propogate but there must be a better way than throwing error here every time??
+		// TODO deletes work and propagate but there must be a better way than returning error here every time??
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on deleted requests.
@@ -75,8 +76,10 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
-	constructCronJobForFuzzyCronJob := func(fuzzyCronJob *batchv1.FuzzyCronJob) (*kbatch.CronJob, error) {
+	constructCronJobForFuzzyCronJob := func(fuzzyCronJob *batchv1.FuzzyCronJob, schedule string) (*kbatch.CronJob, error) {
 		// We want job names for a given nominal start time to have a deterministic name to avoid the same job being created twice
+		cronJobSpec := &kbatch.CronJobSpec{Schedule: schedule}
+		copier.Copy(cronJobSpec, fuzzyCronJob.Spec.CronJob)
 		cronjob := &kbatch.CronJob{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels:      make(map[string]string),
@@ -84,7 +87,7 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				Name:        fuzzyCronJob.Name,
 				Namespace:   fuzzyCronJob.Namespace,
 			},
-			Spec: *fuzzyCronJob.Spec.CronJob.DeepCopy(),
+			Spec: *cronJobSpec,
 		}
 		for k, v := range fuzzyCronJob.Annotations {
 			cronjob.Annotations[k] = v
@@ -106,8 +109,7 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		// don't bother requeuing until we get a change to the spec
 		return ctrl.Result{}, nil
 	}
-	fuzzyCronJob.Spec.CronJob.Schedule = schedule
-	cronjob, err := constructCronJobForFuzzyCronJob(&fuzzyCronJob)
+	cronjob, err := constructCronJobForFuzzyCronJob(&fuzzyCronJob, schedule)
 	if err != nil {
 		log.Error(err, "unable to construct cronjob from template")
 		// don't bother requeuing until we get a change to the spec

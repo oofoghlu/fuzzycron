@@ -41,7 +41,7 @@ var _ = Describe("Fuzzycronjob Controller", func() {
 			},
 			Spec: fuzzycronjobv1.FuzzyCronJobSpec{
 				Schedule: "1 * * * *",
-				CronJob: batchv1.CronJobSpec{
+				CronJob: fuzzycronjobv1.CronJobSpec{
 					JobTemplate: batchv1.JobTemplateSpec{
 						Spec: batchv1.JobSpec{
 							// For simplicity, we only fill out the required fields.

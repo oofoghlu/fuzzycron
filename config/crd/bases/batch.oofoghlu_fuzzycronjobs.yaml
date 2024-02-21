@@ -3379,8 +3379,6 @@ spec:
                         - template
                         type: object
                     type: object
-                  schedule:
-                    type: string
                   startingDeadlineSeconds:
                     format: int64
                     type: integer
@@ -3393,7 +3391,6 @@ spec:
                     type: string
                 required:
                 - jobTemplate
-                - schedule
                 type: object
               foo:
                 type: string
