@@ -63,7 +63,7 @@ vet: ## Run go vet against code.
 
 .PHONY: install-test-deps
 install-test-deps:
-	go install github.com/jstemmer/go-junit-report/v2@latest
+	GOBIN=$(LOCALBIN) go install github.com/jstemmer/go-junit-report/v2@latest
 
 .PHONY: test
 test: manifests generate fmt vet envtest install-test-deps ## Run tests.
