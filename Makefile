@@ -67,7 +67,7 @@ install-test-deps:
 
 .PHONY: test
 test: manifests generate fmt vet envtest install-test-deps ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out | go-junit-report -iocopy -set-exit-code -out report.xml
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out | $(GOJUNIT) -iocopy -set-exit-code -out report.xml
 
 GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
 GOLANGCI_LINT_VERSION ?= v1.54.2
@@ -158,6 +158,7 @@ KUBECTL ?= kubectl
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
+GOJUNIT ?= $(LOCALBIN)/go-junit-report
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.2.1
