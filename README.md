@@ -1,10 +1,79 @@
 # fuzzycron
 ![master build](https://github.com/oofoghlu/fuzzycron/actions/workflows/validation.yaml/badge.svg)
 
-// TODO(user): Add simple overview of use/purpose
+Boost your Kubernetes CronJobs with Jenkins-style hashed cron expressions.
+
+fuzzycron provides a FuzzyCronJob CRD that manages CronJobs in your cluster, effectively extending
+CronJobs to handle hashes in cron expressions.
+
+fuzzycron runs as an operator in your cluster, evaluating the hash expressions, and creating CronJob
+resources from the evaluated expression. These hashes allow for more uniform distribution of your workloads
+across time. Like with Jenkins, the hashes are deterministic on a per-job basis, meaning changes to the Spec
+won't affect your defined schedule.
+
+A ValidatingWebhook is provided to ensure the hash expression and cron spec's are validated.
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+
+A FuzzyCronJob contains an embedded CronJob spec. This spec is identical to the standard CronJob spec with schedule excluded. The CronJob
+inherits labels and annotations from the FuzzyCronJob.
+
+Sample manifest:
+
+```yaml
+apiVersion: batch.oofoghlu/v1
+kind: FuzzyCronJob
+metadata:
+  name: fuzzycronjob-sample
+spec:
+  schedule: "H H * * *"
+  cronJob:
+    startingDeadlineSeconds: 60
+    concurrencyPolicy: Allow
+    jobTemplate:
+      spec:
+        template:
+          spec:
+            containers:
+            - name: hello
+              image: busybox
+              args:
+              - /bin/sh
+              - -c
+              - date; echo Hello from the Kubernetes cluster
+            restartPolicy: OnFailure
+```
+
+Will be evaluated as:
+
+```
+$ kubectl get fcj
+NAME                  FUZZY SCHEDULE   SCHEDULE
+fuzzycronjob-sample   H H * * *        46 21 * * *
+
+$ kubectl get cj
+NAME                  SCHEDULE      SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+fuzzycronjob-sample   46 21 * * *   False     0        119m            122m
+```
+
+The hash is based on `<namespace>-<name>` allowing for crons with the same name to be scheduled differently across
+namespaces, or more simply for all crons that need to run on the same cadence are spread out. The hash is evaluated
+differently per field index in the cron expression ensuring spread from field to field when evaluated for the same
+range.
+
+Some sample expressions supported (along with example evaluations):
+
+H H H H H
+-> 20 19 11 6 4
+
+H H * H/2 *
+-> 18 17 * 1/2 *
+
+H(5-15)/20 H/5 * * *
+-> 12/20 3/5 * * *
+
+H(0-5) * * * *
+-> 4 * * * *
 
 ## Getting Started
 
