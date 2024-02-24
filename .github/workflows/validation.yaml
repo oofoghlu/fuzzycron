@@ -40,4 +40,11 @@ jobs:
           paths: "report.xml"
         if: always()
 
+      - name: Upload test summary
+        uses: actions/upload-artifact@v3
+        with:
+          name: "report.xml"
+          path: "report.xml"
+        if: always()
+
       - run: echo "🍏 This job's status is ${{ job.status }}."
