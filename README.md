@@ -1,4 +1,6 @@
 # fuzzycron
+![master build](https://github.com/oofoghlu/fuzzycron/actions/workflows/validation.yml/badge.svg)
+
 // TODO(user): Add simple overview of use/purpose
 
 ## Description

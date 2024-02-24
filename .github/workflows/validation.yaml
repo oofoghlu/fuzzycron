@@ -1,0 +1,50 @@
+name: FuzzyCron Validation
+run-name: ${{ github.actor }} is validating fuzzycron
+on:
+  push:
+    branches:
+      - master
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+
+      - name: Check go version
+        run: go version
+
+      - name: Set Go paths
+        id: go-paths
+        run: |
+          echo "mod_cache=$(go env GOMODCACHE)" >> $GITHUB_OUTPUT
+          echo "build_cache=$(go env GOCACHE)" >> $GITHUB_OUTPUT
+
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+
+      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
+
+      - name: Build
+        run: make build
+
+      - name: Test
+        run: make test
+
+      - name: Create test Summary
+        uses: test-summary/action@v2
+        with:
+          paths: "report.xml"
+        if: always()
+
+      - name: Upload test summary
+        uses: actions/upload-artifact@v3
+        with:
+          name: "report.xml"
+          path: "report.xml"
+        if: always()
+
+      - run: echo "🍏 This job's status is ${{ job.status }}."
