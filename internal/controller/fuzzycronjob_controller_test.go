@@ -107,7 +107,7 @@ var _ = Describe("Fuzzycronjob Controller", func() {
 				By("By Updating the FuzzyCronJob Status with the evaulated schedule successfully")
 				Eventually(func() bool {
 					err := k8sClient.Get(ctx, fuzzycronjobLookupKey, createdFuzzyCronjob)
-					return err == nil && createdFuzzyCronjob.Status.Schedule == "* 8 * * *"
+					return err == nil && createdFuzzyCronjob.Status.Schedule == "* 19 * * *"
 				}, timeout, interval).Should(BeTrue())
 
 				cronjobLookupKey := types.NamespacedName{Name: "hashed-cron-job", Namespace: CronjobNamespace}

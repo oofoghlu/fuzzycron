@@ -132,7 +132,7 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			fmt.Sprintf("CronJob Resource %s is being created from the namespace %s",
 				cronjob.Name,
 				cronjob.Namespace))
-		log.V(1).Info("created CronJob for FuzzyCronJob run", "cronjob", cronjob)
+		log.V(1).Info("created CronJob for FuzzyCronJob", "cronjob", cronjob)
 
 	} else {
 		// TODO add labels/annotation to equality check to allow for updates to them.
@@ -152,7 +152,7 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				fmt.Sprintf("CronJob Resource %s is being updated from the namespace %s",
 					cronjob.Name,
 					cronjob.Namespace))
-			log.V(1).Info("updated CronJob for FuzzyCronJob run", "cronjob", cronjob)
+			log.V(1).Info("updated CronJob for FuzzyCronJob", "cronjob", cronjob)
 		} else {
 			log.V(1).Info("no differences in cronjob so skipping update", "cronjob", cronjob)
 		}
@@ -173,6 +173,8 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 		metrics.FuzzyStatusUpdate.WithLabelValues(fuzzyCronJob.Name, fuzzyCronJob.Namespace).Inc()
 		log.V(1).Info("Successfully updated Status", "fuzzycronjob", fuzzyCronJob)
+	} else {
+		log.V(1).Info("no differences in cronjob status so skipping patch", "fuzzycronjob", fuzzyCronJob.Status)
 	}
 
 	return ctrl.Result{}, nil

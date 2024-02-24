@@ -49,7 +49,7 @@ func parseStepField(field string, index int, hashNumber uint32) (string, error) 
 	step, error := strconv.Atoi(numSplit[1])
 	if error == nil {
 		if numSplit[0] == "H" {
-			return fmt.Sprintf("%s/%d", moduloHash(hashNumber, step, lowerBounds[index]), step), nil
+			return fmt.Sprintf("%s/%d", moduloHash(hashNumber, step-lowerBounds[index], lowerBounds[index]), step), nil
 		} else if match := hashRangeRegex.FindStringSubmatch(numSplit[0]); match != nil {
 			evaluatedRange, error := parseRangeField(field, index, hashNumber, match)
 			if error != nil {
@@ -81,9 +81,11 @@ func EvalCrontab(crontab string, name string) (string, error) {
 	if len(split) != 5 {
 		return parseSchedule(crontab)
 	}
-	hashNumber := hash(name)
+
 	var evalSplit [5]string
 	for index, field := range split {
+		// Appending index to string hashed ensures we get a different hash number per field.
+		hashNumber := hash(name + strconv.Itoa(index))
 		evaluatedField, error := parseField(field, index, hashNumber)
 		if error != nil {
 			return "", error
