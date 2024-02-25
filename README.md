@@ -9,9 +9,9 @@ CronJobs to handle hashes in cron expressions.
 fuzzycron runs as an operator in your cluster, evaluating the hash expressions, and creating CronJob
 resources from the evaluated expression. These hashes allow for more uniform distribution of your workloads
 across time. Like with Jenkins, the hashes are deterministic on a per-job basis, meaning changes to the Spec
-won't affect your defined schedule.
+won't affect your workloads already running.
 
-A ValidatingWebhook is provided to ensure the hash expression and cron spec's are validated.
+A ValidatingWebhook is provided to ensure the hash expression and cron specs are validated.
 
 ## Description
 
@@ -63,6 +63,7 @@ range.
 
 Some sample expressions supported (along with example evaluations):
 
+```
 H H H H H
 -> 20 19 11 6 4
 
@@ -74,6 +75,9 @@ H(5-15)/20 H/5 * * *
 
 H(0-5) * * * *
 -> 4 * * * *
+```
+
+For more info on cron hashes see: https://github.com/oofoghlu/fuzzycrontab
 
 ## Getting Started
 

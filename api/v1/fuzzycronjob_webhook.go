@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	"oofoghlu/fuzzycron/internal/utils"
+	"github.com/oofoghlu/fuzzycrontab"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -48,7 +48,7 @@ var _ webhook.Validator = &FuzzyCronJob{}
 func (r *FuzzyCronJob) ValidateCreate() (admission.Warnings, error) {
 	fuzzycronjoblog.Info("validate create", "name", r.Name)
 
-	_, err := utils.EvalCrontab(r.Spec.Schedule, r.Namespace+r.Name)
+	_, err := fuzzycrontab.EvalCrontab(r.Spec.Schedule, r.Namespace+r.Name)
 	if err != nil {
 		err = field.Invalid(field.NewPath("spec").Child("schedule"), r.Spec.Schedule, err.Error())
 	}
@@ -59,7 +59,7 @@ func (r *FuzzyCronJob) ValidateCreate() (admission.Warnings, error) {
 func (r *FuzzyCronJob) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	fuzzycronjoblog.Info("validate update", "name", r.Name)
 
-	_, err := utils.EvalCrontab(r.Spec.Schedule, r.Namespace+r.Name)
+	_, err := fuzzycrontab.EvalCrontab(r.Spec.Schedule, r.Namespace+r.Name)
 	if err != nil {
 		err = field.Invalid(field.NewPath("spec").Child("schedule"), r.Spec.Schedule, err.Error())
 	}

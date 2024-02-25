@@ -22,7 +22,8 @@ import (
 
 	batchv1 "oofoghlu/fuzzycron/api/v1"
 	"oofoghlu/fuzzycron/internal/metrics"
-	"oofoghlu/fuzzycron/internal/utils"
+
+	"github.com/oofoghlu/fuzzycrontab"
 
 	"github.com/jinzhu/copier"
 	kbatch "k8s.io/api/batch/v1"
@@ -103,7 +104,7 @@ func (r *FuzzyCronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	// Evaluate hashes in crontab expression
-	schedule, err := utils.EvalCrontab(fuzzyCronJob.Spec.Schedule, req.Namespace+fuzzyCronJob.Name)
+	schedule, err := fuzzycrontab.EvalCrontab(fuzzyCronJob.Spec.Schedule, req.Namespace+fuzzyCronJob.Name)
 	if err != nil {
 		log.Error(err, "unable to construct CronJob schedule from FuzzyCronJob schedule")
 		// don't bother requeuing until we get a change to the spec
